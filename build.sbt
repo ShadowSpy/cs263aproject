@@ -1,7 +1,3 @@
-import AssemblyKeys._
-
-assemblySettings
-
 name := "instructions"
 
 version := "0.1-SNAPSHOT"
