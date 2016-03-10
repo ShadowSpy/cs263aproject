@@ -62,10 +62,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
     val transcriptFile = new File(transcriptDir, sentenceTranscriptFileName)
     val doc = XML.loadFile(transcriptFile)
     (doc \ "example").map { example =>
-//      val startStr = (example \@ "start").drop(1).dropRight(1).split(", ")
-//      val start = (startStr(0).toInt, startStr(1).toInt)
-//      val endStr = (example \@ "end").drop(1).dropRight(1).split(", ")
-//      val end = (endStr(0).toInt, endStr(1).toInt)
       val mapName = (example \@ "map").toLowerCase
       val map = maps(mapName)
       val instruction = (example \ "instruction").text
@@ -88,8 +84,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
           Some(sentence)
         }
       }
-//      println(splitSentences.mkString("\n"))
-//      println()
       val path = (example \ "path").text.trim.drop(1).dropRight(1)
       val sites = """\((\d+), (\d+), ([-\d]+)\)""".r.findAllIn(path)
       val posns = sites.matchData.map { mtch =>
@@ -105,7 +99,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
         if (Collapse && prevStates.length >= 2 && prevStates.tail.head.orientation == last.orientation && last.orientation == posn._3) {
           val next = SailState(map.nodes(posn._1, posn._2), posn._3, map)
           next :: prevStates.tail
-//          next :: prevStates
         } else {
           val next = SailState(map.nodes(posn._1, posn._2), posn._3, map)
           next :: prevStates
@@ -116,7 +109,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
         val state = states.head
         val act = VerifyAction(state)
         TaskInstance(IndexedSeq((state, act, state)), splitSentences)
-//        LabeledInstanceImpl(IndexedSeq(), Walkthrough(sentences))
       } else {
         val transitions = states.sliding(2).map { case IndexedSeq(s1, s2) =>
           val action: SailAction = if (s1.node.x == s2.node.x && s1.node.y == s2.node.y) {
@@ -125,21 +117,12 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
             RotateAction(s1, angle)
           } else {
             assert { s1.orientation == s2.orientation }
-//            assert { s1.node.x == s2.node.x || s1.node.y == s2.node.y }
             if (s1.node.x != s2.node.x && s1.node.y != s2.node.y) {
               println("!!! BAD PATH")
             }
             val dist = max(abs(s1.node.x - s2.node.x), abs(s1.node.y - s2.node.y))
-//            println(dist)
             MoveAction(s1, dist)
           }
-//          println()
-//          println(s1)
-//          println(action)
-//          println(doAction(s1, action))
-//          println(s2)
-          // some annotations are bad
-          // assert { doAction(s1, action) == s2 }
           (s1, action, s2)
         }.toIndexedSeq.map {
           case (s1, a: RotateAction, s2) if a.angle == 0 => {
@@ -152,15 +135,7 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
 
 
         val finalTransitions = transitions
-//          if (transitions.isEmpty) IndexedSeq((startState, VerifyAction(startState), startState.copy(step = startState.step+1, stayedLast = true)))
-//          else transitions
 
-//        val collapsedTransitions = mutable.Queue[(SailState,SailAction,SailState)]()
-//        collapsedTransitions.enqueue(transitions.head)
-//        transitions.tail.foreach { case (s1, a, s2) =>
-//          val (os1, oa, os2) = collapsedTransitions.last
-//          if (oa.isInstanceOf[MoveAction])
-//        }
 
         TaskInstance(finalTransitions, splitSentences)
       }
@@ -171,17 +146,11 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
     val transcriptFile = new File(transcriptDir, fileName)
     val doc = XML.loadFile(transcriptFile)
     (doc \ "example").zipWithIndex.map { case (example, id) =>
-      //      val startStr = (example \@ "start").drop(1).dropRight(1).split(", ")
-      //      val start = (startStr(0).toInt, startStr(1).toInt)
-      //      val endStr = (example \@ "end").drop(1).dropRight(1).split(", ")
-      //      val end = (endStr(0).toInt, endStr(1).toInt)
       val mapName = (example \@ "map").toLowerCase
       (mapName, id)
     }.toIndexedSeq
   }
 
-//  override val trainIds: IndexedSeq[Int] = idsAndMaps(sentenceTranscriptFileName).map(_._2)
-//  override val testIds = IndexedSeq[Int]()
   val trainIds0: IndexedSeq[Int] = idsAndMaps(sentenceTranscriptFileName).filter { case (name, id) => name == "jelly" || name == "grid" }.map(_._2)
   val testIds0: IndexedSeq[Int] = idsAndMaps(sentenceTranscriptFileName).filter { case (name, id) => name == "l" }.map(_._2)
   val trainIds1: IndexedSeq[Int] = idsAndMaps(sentenceTranscriptFileName).filter { case (name, id) => name == "grid" || name == "l" }.map(_._2)
@@ -229,7 +198,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
 
     Set(90, 180, 270).foreach(angle => actBuilder += RotateAction(state, angle))
 
-//    if (!state.stayedLast) actBuilder += VerifyAction(state)
     actBuilder += VerifyAction(state)
 
     val r = actBuilder.result()
@@ -241,9 +209,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
       case a:MoveAction =>
         val posn = (state.node.x, state.node.y)
         val forward = stepDirection(posn, state.orientation, a.distance)
-//        println(posn, forward)
-//        println(state.map.edges.keys)
-//        assert { state.map.edges.contains(posn, forward) }
         SailState(state.map.nodes(forward), state.orientation, state.map)
 
       case a:RotateAction =>
@@ -291,26 +256,14 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
       case VerifyAction(startState) => Set(SimpleFeature("action:verify"))
     }
     val relationBuilder = Set.newBuilder[Relation]
-//    val event = Event(eventFeats + SimpleFeature("EVENT_CONST"))
     val event = Event(eventFeats)
-//    val fromNode = buildNode(s1.node, relationBuilder, "before", s1.map, s1.orientation)
-//    val fromNode = Entity(Set(SimpleFeature("item=" + s1.node.item)))
+
     val toNode = buildNode(s2.node, relationBuilder, "after", s2.map, s2.orientation)
-//    val toNode = Entity(Set(SimpleFeature("item=" + s2.node.item)))
-//    relationBuilder += Relation(event, fromNode, Set(SimpleFeature("from")))
-//    relationBuilder += Relation(event, fromNode, Set(SimpleFeature("before"))) // to")))
+
     relationBuilder += Relation(event, toNode, Set(SimpleFeature("after"))) // to")))
     if (s1.node != s2.node) {
       try {
-        //      val edge = s1.map.edges((s1.node.x, s1.node.y),(s2.node.x, s2.node.y))
-//        val xDir = signum(s2.node.x - s1.node.x).toInt
-//        val yDir = signum(s2.node.y - s1.node.y).toInt
-//        val startEdge = s1.map.edges((s1.node.x, s1.node.y),(s1.node.x + xDir, s1.node.y + yDir))
-//        val endEdge = s1.map.edges((s2.node.x-xDir, s2.node.y-yDir),(s2.node.x, s2.node.y))
-//        val via = Entity(Set(SimpleFeature("startWall=" + startEdge.wall), SimpleFeature("startFloor=" + startEdge.floor),
-//                              SimpleFeature("endWall=" + endEdge.wall), SimpleFeature("endFloor=" + endEdge.floor)))
-      //     SimpleFeature("startWall=" + startEdge.wall), SimpleFeature("startFloor=" + startEdge.floor)))
-//        relationBuilder += Relation(event, via, Set(SimpleFeature("via")))
+
       } catch {
         case e: NoSuchElementException =>
       }
@@ -351,11 +304,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
     val right = map.nodes.get(node.x + rightX, node.y + rightY)
     val back = map.nodes.get(node.x + backX, node.y + backY)
 
-//    val left = map.nodes.get(node.x - 1, node.y)
-//    val front = map.nodes.get(node.x, node.y - 1)
-//    val right = map.nodes.get(node.x + 1, node.y)
-//    val back = map.nodes.get(node.x, node.y + 1)
-
     val nodes = Seq(left, front, right, back)
     val names = Seq("left", "front", "right", "back")
     val edges = nodes map {
@@ -368,13 +316,6 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
       else Set[Feature]()
     val nNeighbors = nodes.flatten.length
     val neighborFeatsHere = // Set[Feature]() // Set[Feature](SimpleFeature("neighbors=" + nNeighbors))
-//      Set(if (nNeighbors >= 3) Some(SimpleFeature("intersection")) else None).flatten
-//        Set(SimpleFeature("neighbors=" + nNeighbors)) ++
-//        Set(
-//          if (edges(1).isEmpty)
-//            Some(SimpleFeature("facing-wall"))
-//          else
-//            None).flatten
           Set()
     val gHere = Entity(itemFeatsHere ++ neighborFeatsHere) // + SimpleFeature("pos=here")) // + SimpleFeature("step=" + position))
 
@@ -396,108 +337,19 @@ class Sail(root: File, language: String)(implicit config: Config) extends Task w
     gHere
 
 
-//  def buildNode(node: SailNode, relationBuilder: mutable.Builder[Relation,Set[Relation]], map: SailMap, depth: Int = 1): Entity = {
-//    val left = map.nodes.get(node.x - 1, node.y)
-//    val front = map.nodes.get(node.x, node.y - 1)
-//    val right = map.nodes.get(node.x + 1, node.y)
-//    val back = map.nodes.get(node.x, node.y + 1)
-//
-//    val nodes = Seq(left, front, right, back)
-//    val names = Seq("left", "front", "right", "back")
-//
-////    val nodes = Seq[Option[SailNode]](Some(node))
-////    val names = Seq("here")
-//
-//    var numNeighbors = 0
-//
-//    val feats = nodes zip names flatMap {
-//      case (None, name) => Set[Feature]()// Set(SimpleFeature(s"$name-wall"))
-//      case (Some(nNode), name) =>
-//        val edge = map.edges.get((node.x, node.y), (nNode.x, nNode.y))
-//        if (edge.isDefined) {
-//          numNeighbors += 1
-////          val theseHallFeats = Set(SimpleFeature(s"$name-wall=${edge.get.wall}"),
-////              SimpleFeature(s"$name-floor=${edge.get.floor}"),
-////              SimpleFeature(s"floor=${edge.get.floor}"),
-////              SimpleFeature(s"wall=${edge.get.wall}"))
-//
-//          val theseHallFeats = Set[Feature](SimpleFeature(s"wall=${edge.get.wall}"),
-//                                            SimpleFeature(s"floor=${edge.get.floor}"))
-//          val theseItemFeats =
-//            if (!node.item.isEmpty) Set[Feature](SimpleFeature("item=" + nNode.item))
-//            else Set()
-//
-//          theseHallFeats // ++ theseItemFeats
-//        } else {
-////          Set(SimpleFeature(s"$name-wall"))
-//          Set[Feature]()
-//        }
-//    }
 
-//    val itemFeats: Set[Feature] =
-//      if (!node.item.isEmpty) Set(SimpleFeature("item="+node.item))
-//        else Set()
-//
-//    val outNode = Entity(
-//      feats.toSet ++
-//      itemFeats +
-//      SimpleFeature("num-neighbors=" + numNeighbors) +
-//      SimpleFeature("ENTITY_CONST")
-//    )
-
-//    nodes zip names foreach {
-//      case (Some(nNode), name) =>
-//        val edge = map.edges.get((node.x, node.y), (nNode.x, nNode.y))
-////        println(depth)
-//        if (edge.isDefined && depth > 0) {
-//          val oNode = buildNode(nNode, relationBuilder, map, 0)
-//          relationBuilder += Relation(outNode, oNode, Set(SimpleFeature(name)))
-//        }
-//      case _ =>
-//    }
-
-//    outNode
   }
 
 }
-
-//case class SailAction(from: SailNode, edges: IndexedSeq[SailEdge]) extends GameAction {
-//  val transitions = edges.foldLeft((edges.head, edges.head.nodeAfter(from)) :: Nil) { (seq, edge2) =>
-//    val (edge, node) = seq.head
-//    (edge2, edge2.nodeAfter(node)) :: seq
-//  }.reverse
-//  override val features: Set[Feature] = {
-//    transitions.flatMap { case (edge, node) =>
-//      Seq { BAD BAD BAD
-//        SimpleFeature(s"floor=${edge.floor}")
-//        SimpleFeature(s"wall=${edge.wall}")
-//        SimpleFeature(s"item=${node.item}")
-//      }
-//    }.toSet
-//  }
-//}
 sealed trait SailAction extends TaskAction
 case class MoveAction(startState: SailState, distance: Int) extends SailAction {
-//  override val features: Set[Feature] = Set {
-//    SimpleFeature("action=move")
-//    SimpleFeature(s"distance=$distance")
-//  }
 }
 case class RotateAction(startState: SailState, angle: Int) extends SailAction {
-//  override val features: Set[Feature] = Set {
-//    SimpleFeature("action=rotate")
-//    SimpleFeature(s"angle=$angle")
-//  }
 }
 
 case class VerifyAction(startState: SailState) extends SailAction
 
 case class SailState(node: SailNode, orientation: Int, map: SailMap) extends TaskState {
-//  override val features: Set[Feature] = {
-//    Set {
-//      SimpleFeature(s"item=${node.item}")
-//    }
-//  }
 }
 
 case class SailNode(x: Int, y: Int, item: String)

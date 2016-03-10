@@ -69,6 +69,8 @@ trait SailConfig extends DefaultConfig {
 //  override val testBeamSize = 1
 }
 
+trait SailGUIConfig extends SailConfg {}
+
 // 5897
 // 5987
 // 5984
@@ -120,8 +122,10 @@ trait CrossBlockConfig extends DefaultConfig {
 // 70
 // 40
 
-
-case class Config() extends CrossBlockConfig
+//case class Config() extends HcrcConfig
+//case class Config() extends SailConfig
+case class Config() extends SailGUIConfig
+//case class Config() extends CrossBlockConfig
 
 object Main extends Experiment[Config] {
   override val paramManifest = manifest[Config]

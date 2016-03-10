@@ -81,18 +81,19 @@ object Test extends Stage[Config] {
             score = iScore + lengthScore
           }
 //          println(alignment)
-//          task.visualize(path, instance.path)
+          task.visualize(path, instance.path)
         }
+		instance.instructions.foreach((instruction:String) => logger.info(instruction))
         logger.info(s"$score, $path")
         logger.info(task.score(path, instance.path).toString)
-//        task.visualize(path, instance.path)
+        task.visualize(path, instance.path)
 //        System.in.read()
 //        System.exit(1)
         (path, score)
       }
     }.maxBy(_._2)
 //    System.exit(1)
-//    task.visualize(prediction, instance.path)
+    task.visualize(prediction, instance.path)
     prediction
   }
 
